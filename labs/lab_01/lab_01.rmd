@@ -1,0 +1,90 @@
+---
+title: "lab_01"
+author: "Derek Willis"
+date: "2026-02-11"
+output: html_document
+name: "Riley Bomgardner"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Turn off scientific notation
+options(scipen=999)
+```
+
+## About this lab
+
+To complete this lab, you need to: \* run existing code as directed (look for **Task**). \* modify existing code as directed (look for **Task**). \* write code in empty codeblocks provided to answer questions included (look for **Q**). \* write out the answer in the form of a complete sentence in the space given (look for **A**). When you are finished, commit changes and push to your personal GitHub repo, then submit the URL to this document on ELMS.
+
+Remember to add any new verbs or concepts to your class reference notebook!
+
+## Load libraries and establish settings
+
+**Task** Run the codeblock below to load the Tidyverse. To run the codeblock, hit the little green play button in the upper right corner of the gray area (the codeblock) below.
+
+```{r}
+# Load the tidyverse. If you have not installed the tidyverse already, remove the # from the next line and run it first.  
+# install.packages('tidyverse')
+library(tidyverse)
+```
+
+## Load Data
+
+We're going to load the UMD courses data.
+
+**Task** Run the codeblock below to load the data, which is contained in an RDS file.
+
+```{r}
+umd_courses <- read_rds("lab_01.rds")
+```
+
+## Answer questions
+
+**Q1** Which department has the highest mean (average) number of seats for its classes? You need to show the department with the highest average first. Which one is the most surprising/interesting to you? **A1: It was interesting to see that many of the language departments had a very low mean for seats. For example, Latin and Greek have an average of 6 or 7 seats.**
+
+```{r}
+umd_courses |>
+  group_by(department) |>
+  summarise(
+    mean_seats = mean(seats)
+  ) |>
+  arrange(desc(mean_seats))
+```
+
+**Q2** Find out the greatest number of times any individual class has been offered in our dataset. Your code must show the greatest number of classes first. **A2: Many classes have been offered 29 times from 2017 to 2025.**
+
+```{r}
+umd_courses |>
+  group_by(id) |>
+  summarise(
+    count_ids = n()
+  ) |>
+  arrange(desc(count_ids))
+```
+
+**Q3** Count the number of courses for each instructor and department. Which instructor has taught the most? **A3: The instructor (NA) for Hearing and Speech Sciences has taught 431 classes. The first real instructor you see in this table is Keith Yearwood in the department of Geographical Sciences, who has taught 79 classes.**
+
+```{r}
+umd_courses |>
+  group_by(instructors, department) |>
+  summarise(
+    count_classes = n()
+  ) |>
+  arrange(desc(count_classes))
+```
+
+**Q4** Given the results for Q3, what would have made it easier to find the answer? You don't have to know *how* to accomplish this; I want you to describe in words what would make the answer easier to see. How confident are you that the answer you got is the right one, and why? **A4: It would have been easier for the data for be complete. It seems like it isn't because a lot of the instructor slots were not filled in. Is this because this is an online class without a professor? Is it because the data was pulled right from Testudo and may not be clean? I'm confident our answer is right because of the process, and because this question is similar to one on the pre-lab, with different variables changed.**
+
+**Q5** Take one of the questions you listed in the final question of the pre_lab and try to answer it here in code. If you don't know how to fully answer it, write what code you can and describe in words what else you would need to do. If you got an answer, is it interesting?
+
+Question: Are there classes at UMD that actually have 2500 seats? Or is that number so large due to online classes or multiple sections and multiple instructors of the same class?
+
+**A5: Yes, because the original table doesn't show total seats per each section, so my code shows how many seats are available per section of each course id.**
+
+```{r}
+umd_courses |>
+ group_by(id) |>
+  summarise(
+  total_seats = sum(seats),
+  seats_per_section = (total_seats/sections))
+```
