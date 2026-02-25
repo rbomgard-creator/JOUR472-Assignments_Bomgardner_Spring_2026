@@ -255,8 +255,12 @@ cleaned_md_grants_loans
 
 ### Task 10: Answer our question!
 
-**Task** Write and run code to answer our original question: which zip code has gotten the most amount of money from the Maryland Tourism Board? Where is that zip code, and does that zip code make sense to you as the top recipient? Write a sentence describing the top result. **Answer**
+**Task** Write and run code to answer our original question: which zip code has gotten the most amount of money from the Maryland Tourism Board? Where is that zip code, and does that zip code make sense to you as the top recipient? Write a sentence describing the top result. **Answer: 21202, which is in Baltimore, with 1,065,000 dollars. This makes sense because of the history of the city, along with being a home to a number of sports teams and rich culture. It's called Charm City for a reason.**
 
 ```{r}
-
+cleaned_md_grants_loans |>
+  filter(source == "MARYLAND TOURISM BOARD") |>
+  group_by(zip5) |>
+  summarize(total_amount = sum(amount, na.rm = TRUE)) |>
+  arrange(desc(total_amount))
 ```
