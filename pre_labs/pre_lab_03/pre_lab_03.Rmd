@@ -50,7 +50,7 @@ payments <- read_csv("data/State_of_Maryland_Payments_Data__FY2008_to_FY2024_202
 
 ### Task 4: Examine the data with glimpse
 
-**Task** Run the following codeblock to glimpse the data. What data type is the "Vendor Name" field? What data type is the "Amount" field? What data type is the "Date" column? Answer below. **Answer**
+**Task** Run the following codeblock to glimpse the data. What data type is the "Vendor Name" field? What data type is the "Amount" field? What data type is the "Date" column? Answer below. **Answer: "Vendor Name" is a chr data type, while "Amount" is a dbl data type.**
 
 ```{r}
 glimpse(payments)
