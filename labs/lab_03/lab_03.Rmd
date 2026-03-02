@@ -80,7 +80,7 @@ payments |>
 
 Q4: You want to understand how much state grant money went to stem cell research projects each fiscal year. Search the data to find grants that fit that description. Once you find which column(s) contain the information you want, your code should find just the grants for stem cell research in a single filter. Then calculate the total amount of money for each fiscal year. Write a sentence summarizing how stem cell research funding has changed over time.
 
-**A4:**
+**A4:Funding for stem cell research heavily fluctuated throughout the years, and in some years, there is no money allocated to it.**
 
 ```{r}
 md_stem_cell_research <- md_grants_loans |>
@@ -92,7 +92,12 @@ md_stem_cell_research <- md_grants_loans |>
 
 Q5: Using the Maryland grants and loan data, find records where the zip code is the one where the University of Maryland-College Park is located in and produce a list of grantees from that zip code, along with the total amount they received. Write a paragraph explaining how many grantees are there, what you would need to do to clean the results so that you had one record per grantee and which grantees are most interesting to you?
 
-**A5:**
+**A5: There are 17 grantees on this list. To make this data clean, I would need to make all grantee names uppercase for consistency. Then I would remove any sort of punctuation, make sure spelling is correct, and standardize abbreviations as well. What surprises me are the companies that do not have a University of Maryland name in their title. Like Zymetis Inc or Ovaltz Inc. Are these just companies that operate out of the College Park area or do they have something to do with the university?**
 
 ```{r}
+umd_zip_grants <- md_grants_loans |>
+  filter(str_detect(zip_code, "20742")) |>
+  group_by(grantee) |>
+  summarize(total_amount = sum(amount)) |>
+  arrange(desc(total_amount))
 ```
