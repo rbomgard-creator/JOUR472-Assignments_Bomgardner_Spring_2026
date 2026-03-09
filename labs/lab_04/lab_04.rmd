@@ -27,7 +27,9 @@ You'll need to load three packages for this: the tidyverse, lubridate and janito
 options(scipen=999)
 
 # load your packages
-
+library(tidyverse)
+library(lubridate)
+library(janitor)
 ```
 
 For this lab, we want to investigate spending by Maryland state and local candidates during the 2022 election. For example, we could ask how much money have candidates and committees spent on advertising on Facebook? Which vendors received the most money for media expenses? We have the data, but it's messy - names of payees are spelled differently and capitalized differently - and we need to clean it up. We'll use a combination of RStudio and OpenRefine to do that.
