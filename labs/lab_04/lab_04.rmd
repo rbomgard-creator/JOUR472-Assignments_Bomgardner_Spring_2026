@@ -42,6 +42,8 @@ You'll need to load one data set, a CSV file of Maryland campaign expenditures l
 
 ```{r}
 # Load the Maryland expenditures data table
+maryland_expenses <- read_csv("data/maryland_expenses.csv") |> 
+  clean_names()
 ```
 
 ## Answer questions
@@ -57,26 +59,49 @@ You'll need to load one data set, a CSV file of Maryland campaign expenditures l
 **A1.**
 
 ```{r}
+library(tidyverse)
+
+media_expenses <- maryland_expenses |>
+  filter(expense_category == "Media", !is.na(payee_name)) |>
+  write_csv("data/media_expenses.csv")
+
+media_expenses_clean <- read_csv("data/media-expenses-csv.csv")
+
+facebook_spending <- media_expenses_clean |>
+  filter(str_detect(payee_clean, "Facebook")) |>
+  group_by(committee_name) |>
+  summarize(total_spent = sum(amount, na.rm = TRUE)) |>
+  arrange(desc(total_spent))
 ```
 
 **Q2.** Let's do some research on the top committees from question 1. Look up the top 10 spenders: if they are candidate committees, what offices were they running for? If they were not candidates, what issues do they seem to care about? Write some sentences answering those questions, then go the Facebook ad library ([https://www.facebook.com/ads/library/?active_status=all&ad_type=political_and_issue_ads&country=US&sort_data\\[direction\\]=desc&sort_data\\[mode\\]=relevancy_monthly_grouped&media_type=all](https://www.facebook.com/ads/library/?active_status=all&ad_type=political_and_issue_ads&country=US&sort_data%5Bdirection%5D=desc&sort_data%5Bmode%5D=relevancy_monthly_grouped&media_type=all){.uri}) and look for ads from the top spender. What do you notice about the the information provided about those ads?
 
-**A2.**
+**A2. All of the top ten spenders were either candidate committees or PACs. A number of the top 10 were "friends of" accounts, which are used for a campaign, so this money was likely spent on Facebook ads to promote their candidacy. Some were running for Maryland slate, which is for the positions of governor and lieutenant governor. After looking through the ad library, only some of these ads provide an estimated audience size and the amount spent on the ad. For most campaigning for governor, their ads stopped around the end of July, but were most expensive at the end of June and early July.**
 
 **Q3.** Given the list of top spenders in A1 and the primary results for governor (<https://elections.maryland.gov/elections/2022/primary_results/gen_results_2022_1.html>), who is missing from that Q1 list? Did those campaigns run Facebook ads? Who are the biggest recipients of media expenses by the Democratic primary winner for governor (HINT: that person has two committees, the second one with his running mate)?
 
-**A3.**
+**A3. Wes Moore and Tom Perez are significantly missing from that list. Wes Moore and Tom Perez did run Facebook ads, so why don't their names pop up? The biggest recipients of media expenses by Wes Moore were SDSK, Foglamp, and Apollo Artistry.**
 
 ```{r}
+moore_media <- media_expenses_clean |>
+  filter(str_detect(committee_name, "Moore")) |>
+  group_by(payee_clean) |>
+  summarize(total_spent = sum(amount, na.rm = TRUE)) |>
+  arrange(desc(total_spent))
 ```
 
 **Q4.** The media expense data you cleaned also has a standardized purpose column. Write code to generate a list of the committees with the total amount of spending on online advertising. How does this list compare to the one from Q1 about top Facebook spenders? Of the top 5 committees who spent the most on Facebook ads from Q1, are there any that appear to have spent *all* of their online advertising dollars on Facebook?
 
-**A4.**
+**A4. There are some similarities in the top 10 for each table, like Casa in Action PAC, but for the most part, they are very different. Friends of Jain Ashwani spent all their money on Facebook ads, as well as Franchot Anderson-Walker for Maryland Slate, and Friends of Salimah Jasani.**
 
 ```{r}
+online_ad_spending <- media_expenses_clean |>
+  filter(str_detect(expense_purpose, "Online")) |>
+  group_by(committee_name) |>
+  summarize(total_online_spent = sum(amount, na.rm = TRUE)) |>
+  arrange(desc(total_online_spent))
 ```
 
 **Q5** Your editor asks you to summarize your findings about spending on Facebook by Maryland political candidates. How much do we know and what don't we know? What's the best story idea you've found here?
 
-**A5**
+**A5 Maryland campaign spending records show that several political candidates, committees, and campaigns spent significant amounts of money on Facebook/Meta during the 2022 primary. Through standardizing vendor names for Facebook and Meta, it's possible to identify which groups relied most heavily on the social media platform for advertising. You can examine how heavily Maryland campaigns relied on Facebook for advertising compared to other online forms, or even through news organizations and traditional media. **
