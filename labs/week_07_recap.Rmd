@@ -139,7 +139,7 @@ earthquakes |>
 #### **Q10** I'm interested, in the future, to see the hours in which earthquakes happen. How can I extract the hour from the time column?
 
 ```{r}
-earthquakes_with_hour <- earthquakes |>
+earthquakes <- earthquakes |>
   mutate(hour = hour(time))
 
 ```
@@ -151,36 +151,50 @@ earthquakes_with_hour <- earthquakes |>
 #### **Q11** I want to make a note of all the records in this data set that I consider serious. For my purposes, I'm thinking that all tremors that have a magnitude that is larger than 3 are serious. How do I automatically create a new column making that distinction?
 
 ```{r}
-earthquakes |>
-  mutate
-case_when
+earthquakes <- earthquakes |>
+  mutate(serious = case_when(
+    mag > 3 ~ "serious",
+    TRUE ~ "not serious"
+  ))
 ```
 
-**A11:**
+**A11: By using a mutate function with case_when.**
 
 ------------------------------------------------------------------------
 
 #### **Q12** I have no idea how earthquakes work and I'm interested in seeing if there is a particular time of day in which serious earthquakes happen. How can I see that condensed in a table with all the hours in a day and all the serious earthquakes in each hour? What is the hour with fewer serious earthquakes and the one with the most serious earthquakes?
 
 ```{r}
-filter
-group_by()
+earthquakes |>
+  filter(serious == "serious") |>
+  group_by(hour) |>
+  summarize(count = n()) |>
+  arrange(desc(count))
 ```
 
-**A12**:
+**A12: Hour 6 and 17 have the most serious earthquakes, while hour 2 has the least.**:
 
 ------------------------------------------------------------------------
 
 #### EXTRA Q What other questions are you interested in and how would you ask them in R?
 
+Where do the strongest earthquakes happen most often?
 ```{r}
-
+earthquakes |>
+  filter(mag > 5) |>
+  count(place, sort = TRUE)
 ```
 
+Do earthquakes happen more often on certain days of the week?
 ```{r}
-
+earthquakes |>
+  mutate(day = wday(time, label = TRUE)) |>
+  count(day, sort = TRUE)
 ```
 
+How many earthquakes happen each day?
 ```{r}
-
+earthquakes |>
+  mutate(date = as_date(time)) |>
+  count(date, sort = TRUE)
 ```
