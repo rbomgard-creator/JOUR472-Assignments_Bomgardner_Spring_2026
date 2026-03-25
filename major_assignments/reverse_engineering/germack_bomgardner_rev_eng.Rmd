@@ -42,8 +42,7 @@ In this section, describe the source of the data, write a basic data dictionary 
 # Clean required data and prepare for analysis if needed. 
 
 nc_donor_data <- read_csv("data/nc_donors_2018.csv") |>
-  clean_names()
-
+  clean_names() |> mutate(amount = parse_number(amount))
 ```
 
 ## Sentences to Engineer
@@ -92,6 +91,7 @@ In this notebook, we are reverse engineering five sentences from the story.
 
 ```{r}
 # Put code to reverse engineer sentence here
+n
 
 # Display results of code below this codeblock
 
@@ -104,7 +104,8 @@ In this notebook, we are reverse engineering five sentences from the story.
 
 ```{r}
 # Put code to reverse engineer sentence here
-
+nc_donor_data |>
+  
 # Display results of code below this codeblock
 
 ```
