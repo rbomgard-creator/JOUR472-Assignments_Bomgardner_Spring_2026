@@ -51,20 +51,35 @@ baltimore_911_with_demographics <- baltimore_911 |> left_join(maryland_zcta, joi
 
 Q1. Let's start with our data from Allegany, Cecil and Carroll counties. Write code to generate a dataframe that shows the total number of calls for each county. What's the order of counties from most calls to least?
 
-A1.
+A1.Carroll: 448, Cecil: 438, Allegany: 418
 
 ```{r}
-allegany_cecil_carroll_911_calls <- combined_911 |>
-  summarize()
+combined_911 |>
+  group_by(county) |>
+  summarize(total_calls = n()) |>
+  arrange(desc(total_calls))
 ```
 
 Q2. In your combined dataframe that you used in A1, add a column for the month of each call, then write code to show the total number of calls per county and month. Are there any outliers or noteworthy results? Describe the general pattern of the results.
 
 Then calculate the most calls per county and location. Which location had the most calls - where and what is that location?
 
-A2.
+A2. Calls tend to peak in summer months, and specifically August for all three counties. Carroll County seems to have the least variation in calls between seasons. November seems to be a low month for Allegany and April seems to be low for Cecil County. The location that had the most calls was 314 Grove Neck Rd in Earleville, MD, which is located in Cecil County. 15 calls came from this location.
 
 ```{r}
+# Add month column and summarize by county and month
+combined_911 <- combined_911 |> mutate(month = month(date))
+
+combined_911 |>
+  group_by(county, month) |>
+  summarize(total_calls = n()) |>
+  arrange(county, month)
+
+# Most calls per county and location
+combined_911 |>
+  group_by(county, location) |>
+  summarize(total_calls = n()) |>
+  arrange(desc(total_calls))
 ```
 
 Q3. Let's turn to the Baltimore City data. You're interested in exploring calls in zip codes with a high percentage of children under 18. Write code to isolate calls in zip codes where the percentage of under 18 population is at least 75% and then show the zip code and population and how many calls occurred in each of those zip codes.
@@ -75,14 +90,55 @@ Add a column to your code that calculates the number of calls per 1,000 people f
 
 Which zip code has the highest rate of calls per 1,000 people? Find the neighborhoods in that zip code that are listed in the data - you can use group_by or distinct to do this. What are some of those neighborhoods, and what else can you tell me about the population there?
 
-A3.
+A3.21217 has the highest rate (20.9%). Some of these neighborhoods include Penn North, Harlem Park, Upton, and Druid Hill Park. 86.4% of this zip codes population are Black and 9.4% are White, non-Hispanic.
 
 ```{r}
+# Filter zip codes where pct_under_18 is at least 75%, show zip, population, calls, and calls per 1,000
+baltimore_911_with_demographics |>
+  group_by(zip_code, population, pct_under_18) |>
+  summarize(total_calls = n()) |>
+  filter(pct_under_18 >= 75) |>
+  mutate(calls_per_1000 = (total_calls / population) * 1000) |>
+  arrange(desc(total_calls))
+
+# Find neighborhoods in the top zip code (21217)
+baltimore_911_with_demographics |>
+  filter(zip_code == "21217") |>
+  distinct(neighborhood)
 ```
 
 Q4. Choose your own adventure: I want you to come up with a question you could ask of the Baltimore City data that combines both the calls and the demographic information. You must use both demographics and the overdose call data in your work.
 
-A4:
+A4: In majority-white zip codes, more residents 65+ correlates with much less 911 calls. These zip codes with 10-20% of the population over 65 average about 1.54 calls per 1,000, which is very low. 
+
+This pattern doesn't continue with majority-Black zip codes. Those with similar constraints, or 10-20% of the population being over 65, average 9.46 calls per 1000. This is over 6 times higher than majority-White zip codes in the same elderly tier.
+
+Are structural factors to blame? Why is there such a stark difference? Does it have to do with redlining, poverty, and home ownership?
 
 ```{r}
+#Do zip codes with higher proportions of elderly residents (65+) have fewer 911 calls? Does that pattern differ between majority-Black and majority-white zip codes?
+
+baltimore_911_with_demographics |>
+  group_by(zip_code, population, pct_pop_65, pct_black_non_hispanic, pct_white_non_hispanic) |>
+  summarize(total_calls = n()) |>
+  mutate(
+    calls_per_1000 = (total_calls / population) * 1000,
+    majority_race = case_when(
+      pct_black_non_hispanic >= 50 ~ "Majority Black",
+      pct_white_non_hispanic >= 50 ~ "Majority White",
+      TRUE ~ "Mixed"
+    ),
+    elderly_tier = case_when(
+      pct_pop_65 < 10  ~ "Low (<10%)",
+      pct_pop_65 < 20  ~ "Mid (10-20%)",
+      TRUE             ~ "High (>20%)"
+    )
+  ) |>
+  group_by(elderly_tier, majority_race) |>
+  summarize(
+    zip_count = n(),
+    avg_calls_per_1000 = mean(calls_per_1000),
+    avg_pct_65 = mean(pct_pop_65)
+  ) |>
+  arrange(elderly_tier, majority_race)
 ```
