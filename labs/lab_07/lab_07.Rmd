@@ -3,6 +3,7 @@ title: "lab_07"
 author: "Derek Willis"
 date: "2025-01-16"
 output: html_document
+name: "Riley Bomgardner"
 ---
 
 ```{r setup, include=FALSE}
@@ -24,6 +25,9 @@ You'll need to load two packages for this: the tidyverse and tidycensus.
 options(scipen=999)
 
 # Load the tidyverse.
+library(tidyverse)
+library(tidycensus)
+library(janitor)
 ```
 
 ## Setup Census API
@@ -33,6 +37,7 @@ You'll need your Census API Key:
 **Task** set your API Key if you haven't already. You won't need to install or overwrite it.
 
 ```{r echo=FALSE}
+
 ```
 
 ## Load and view ACS variables
@@ -42,18 +47,26 @@ You'll also need to load the list of American Community Survey variables from th
 **Task** load the variables from the 2021 5-year ACS (which is called "acs5") and save them to a dataframe
 
 ```{r}
+variable_acs <- load_variables(2021,"acs5", cache=TRUE)
+
+variable_finder2 <- variable_acs |> filter(concept == "MEDIAN AGE BY SEX")
 ```
 
 ## Answer questions
 
-**Q1** What is the Maryland jurisdiction with the lowest median age, according to the ACS 2023 5-year estimates? You will need to find the variable for median age first. **A1**
+**Q1** What is the Maryland jurisdiction with the lowest median age, according to the ACS 2021 5-year estimates? You will need to find the variable for median age first. **A1: Baltimore City has the lowest median age, with 35.7 years, give or take 0.1.**
 
 ```{r}
+md_median_age <- get_acs(geography = "county", 
+                         variables = c(median_age = "B01002_001"),
+                         year = 2021,
+                         state = "MD")
 ```
 
-**Q2** Which Maryland counties have a median age of at least 50? You can use the dataframe you just made to answer this, but you must write code to display only those counties with a median age of at least 50. **A2**
+**Q2** Which Maryland counties have a median age of at least 50? You can use the dataframe you just made to answer this, but you must write code to display only those counties with a median age of at least 50. **A2: Talbot and Worcester Counties.**
 
 ```{r}
+md_median_age |> filter(estimate >= 50)
 ```
 
 **Q3** We're interested in knowing more about Montgomery County zip codes where overdose calls are coming from and the demographic characteristics they possess. In particular, we want to calculate a rate of calls per 1,000 population. To do this, you'll need to:
@@ -67,14 +80,37 @@ You'll also need to load the list of American Community Survey variables from th
 
 Which zip code has the highest rate of calls? Which has the lowest?
 
-**A3**
+**A3: Highest rate of calls is 20877, lowest is 20707**
 
 ```{r}
+#load montgomery 911 data
+montgomery_911 <- read_csv("data/montgomery_2022_overdoses.csv") |> clean_names() |> mutate(zip = as.character(zip))
+
+#create new dataframe for total number of calls for each zip code
+mont_911_calls_zip_code <- montgomery_911 |>
+  group_by(zip) |>
+  summarize(total = n())
+
+#part 3 and 4
+pop18over_by_zcta <- get_acs(geography = "zcta",
+                             variables = c(pop18_over = "B09021_001"),
+                             state = "MD",
+                             year = 2019)
+
+#part 5
+joined_calls_per_zip <- mont_911_calls_zip_code |> right_join(pop18over_by_zcta, join_by(zip == GEOID))
+joined_calls_per_zip <- joined_calls_per_zip |>
+  rename(population = estimate)
+
+#part 6
+joined_rate <- joined_calls_per_zip |>
+  mutate(rate = (total/population)*1000) |>
+  arrange(desc(rate))
 ```
 
 **Q4** Using [CensusReporter.org](https://censusreporter.org/), examine the zip codes with the highest and lowest rates and compare and contrast their demographic profiles. Is there a story here?
 
-**A4**
+**A4: There's not much of a story. Gaithersburg (20877) is a smaller area (5.6 miles), with more people per square mile, while Laurel (20707) is larger (12.6 miles) with less people per square mile. Laurel has less density, which could be why their 911 calls are so low. Suburban areas tend to call less than urban areas.**
 
 **Q5** Go back to your joined dataframe from Q3 and add two more columns representing the minimum and maximum populations based on the estimate and margin of error, then calculate per capita rates for each. Do you get the same two zip codes for the highest and lowest as you did before? Does that give you more or less confidence in your answers to Q3?
 
