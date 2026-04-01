@@ -63,13 +63,15 @@ In this notebook, we are reverse engineering five sentences from the story.
 ### Sentence 2
 
 * **Sentence text**: [Beer distributors also gave during session. Mark Craig, the president of distributor R.H. Barringer, put more than $30,000 into state legislative campaigns during the six-week period, including the maximum $5,200 to Berger. He was the top individual donor to legislative campaigns during session.]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: [We were able to confirm our finding. Using a string detect, we were able to take out all of Mark Craig's donations to NC legilators, along with the maximum donation of 5200. It's pretty straightforward, but it's still able to be confirmed.]
 
 ```{r}
 # Put code to reverse engineer sentence here
-
+nc_donor_data |>
+  filter(str_detect(name_clean, "MARK R CRAIG")) |>
+  summarise(total = sum(amount), max = max(amount))
 # Display results of code below this codeblock
-
+total = 33,200.  max = 5200
 ```
 
 ### Sentence 3
