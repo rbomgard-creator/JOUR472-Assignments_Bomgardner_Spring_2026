@@ -211,7 +211,7 @@ md_high_schools <- read_csv("data/md_high_schools.csv") |>
 
 The Census Bureau has Zip Code Tabulation Areas - they are mostly identical to what we know as zip codes, with some small differences. In most cases we can use them interchangeably.
 
-**Task** Let's get ZCTA household income data from the ACS using tidycensus for each zip code in `md_high_schools`. Run the following codeblock to retrieve household income data from 2019 - the latest year for which we have it for all Maryland ZCTAs - first, then join them to `md_high_schools` using the GEOID column. We'll also create min and max values and drop any rows where we don't have income estimates. What's one question we could ask of this data now that we have enrollment percentages and household income for the high school's zip code? What might make the answer harder to interpret? **Answer: How does household income affect how high schoolers apply to colleges?**
+**Task** Let's get ZCTA household income data from the ACS using tidycensus for each zip code in `md_high_schools`. Run the following codeblock to retrieve household income data from 2019 - the latest year for which we have it for all Maryland ZCTAs - first, then join them to `md_high_schools` using the GEOID column. We'll also create min and max values and drop any rows where we don't have income estimates. What's one question we could ask of this data now that we have enrollment percentages and household income for the high school's zip code? What might make the answer harder to interpret? **Answer: How does household income affect how highschoolers apply to colleges?**
 
 ```{r}
 md_zipcodes <- get_acs(geography="zcta", variables = "B19013_001", state='MD', year=2019)
@@ -231,4 +231,4 @@ md_high_schools_with_acs |>
   summarize(avg_income = mean(estimate), count = n())
 ```
 
-**Task** What is another question you could ask of this data? **Answer**
+**Task** What is another question you could ask of this data? **Answer: Do schools near community colleges show higher enrollment rates regardless of income, suggesting that proximity and affordability of local options matters? In order to do this I would need data on the community colleges in the state of Maryland, and possibly if they have dual-enrollment programs with nearby high schools.**
