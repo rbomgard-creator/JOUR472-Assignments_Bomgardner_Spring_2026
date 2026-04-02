@@ -28,6 +28,7 @@ Loading required libraries for this analysis.
 library(tidyverse)
 library(janitor)
 library(lubridate)
+library(stringr)
 ```
 
 ## Load and Cleaning Data
@@ -41,8 +42,7 @@ In this section, describe the source of the data, write a basic data dictionary 
 
 # Clean required data and prepare for analysis if needed. 
 
-nc_donor_data <- read_csv("data/nc_donors_2018.csv") |>
-  clean_names() |> mutate(amount = parse_number(amount))
+nc_donor_data <- read.csv("data/nc_donors_2018.csv", stringsAsFactors = FALSE)
 ```
 
 ## Sentences to Engineer
@@ -71,7 +71,7 @@ nc_donor_data |>
   filter(str_detect(name_clean, "MARK R CRAIG")) |>
   summarise(total = sum(amount), max = max(amount))
 # Display results of code below this codeblock
-total = 33,200.  max = 5200
+#total = 33,200.  max = 5200
 ```
 
 ### Sentence 3
@@ -89,26 +89,67 @@ total = 33,200.  max = 5200
 ### Sentence 4
 
 * **Sentence text**: [This year's legislative session also saw significant donations from hog farmers and beer distributors, both industries with important legislation before the General Assembly. Senate President Pro Tem Phil Berger's campaign alone raised nearly $222,000 during session. Twenty-three people gave him the maximum allowed: $5,200.]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: [Our analysis is correct. In order to do this question, constraints on date needed to align with the time that the six week session started and ended. The total amount donated to Berger during that time was $221925, which is roughly $220,000, which is what the article said. This code also outlines the 23 donors who gave $5200 as their donation. I also added in some code about the hog farmers and beer industry, but to me their donations don't seem that significant.]
 
 ```{r}
 # Put code to reverse engineer sentence here
-n
 
+full_session <- subset(nc_donor_data, date_clean >= "2018-05-16" & date_clean <= "2018-06-29")
+
+#Berger
+berger <- subset(full_session, committee_name == "PHILIP E BERGER COMM")
+
+#Gives full amount of campaign donations during session
+sum(berger$amount, na.rm = TRUE)
+
+#gives number of donors to Berger
+nrow(subset(berger, amount == 5200))
+
+#hog farmers donations
+hog <- subset(full_session, grepl("pork|smithfield|farm bureau", name, ignore.case = TRUE))
+
+sum(hog$amount, na.rm = TRUE)
+
+#beer distributors
+beer <- subset(full_session, grepl("beer & wine wholesale", name, ignore.case = TRUE))
+
+sum(beer$amount, na.rm = TRUE)
+  
 # Display results of code below this codeblock
+
+#Total amount = 221,925
+# of donors = 23
+#money donated to berger from hog farmers = 16,000
+#money donated to berger from beer = $2500
 
 ```
 
 ### Sentence 5
 
 * **Sentence text**: [There was a major bump during the first week of session this year for the state parties, but that's because three large donors – LinkedIn co-founder Reid Hoffman, Durham investor Greg Lindberg and Lindberg's Eli Research company – donated $1.3 million that week to the state Republican and Democrat parties.]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Analysis summary**: [This one was a little more challenging. I had to change the date format so that the computer could figure out when the first week of the session was. Using the donors names was easy, along with what columns I wanted shown. The number came out of 1.25 million, which was most likely rounded up in the article. This code also breaks down how much each of the three donors gave, with Reid Hoffman and Greg Lindberg donated 500,000 dollars in the first week.]
 
 ```{r}
 # Put code to reverse engineer sentence here
-nc_donor_data |>
-  
+
+nc_donor_data$amount <- as.numeric(gsub("[$,]", "", trimws(nc_donor_data$amount)))
+
+nc_donor_data$date_clean <- as.Date(nc_donor_data[["date"]], "%m/%d/%y")
+ 
+big_donors <- c("Reid Garrett Hoffman", "Greg Lindberg", "ELI Research LLC")
+ 
+first_week <- subset(nc_donor_data,
+                     date_clean >= "2018-05-16" &
+                     date_clean <= "2018-05-22" &
+                     name %in% big_donors)
+ 
+first_week[, c("date_clean", "name", "committee_name", "amount")]
+ 
+sum(first_week$amount, na.rm = TRUE)
+
 # Display results of code below this codeblock
+
+#total amount for first week = 1,250,000
 
 ```
 
