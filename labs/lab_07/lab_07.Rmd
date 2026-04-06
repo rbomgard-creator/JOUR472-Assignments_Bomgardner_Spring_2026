@@ -114,7 +114,15 @@ joined_rate <- joined_calls_per_zip |>
 
 **Q5** Go back to your joined dataframe from Q3 and add two more columns representing the minimum and maximum populations based on the estimate and margin of error, then calculate per capita rates for each. Do you get the same two zip codes for the highest and lowest as you did before? Does that give you more or less confidence in your answers to Q3?
 
-**A5**
+**A5: Yes, the highest and lowest zip codes are still the same. It makes me feel more confident because the min and max rates for both zip codes are the highest and lowest rates, even with margin of error applied.**
 
 ```{r}
+joined_rate_q5 <- joined_rate |>
+  mutate(
+    pop_min = population - moe,
+    pop_max = population + moe,
+    rate_min = (total / pop_max) * 1000,   # smallest rate (largest population)
+    rate_max = (total / pop_min) * 1000    # largest rate (smallest population)
+  ) |>
+  arrange(desc(rate))
 ```
