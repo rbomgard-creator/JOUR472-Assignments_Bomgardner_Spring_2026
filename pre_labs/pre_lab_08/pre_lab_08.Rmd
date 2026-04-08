@@ -33,7 +33,7 @@ The dataset we'll use is 911 overdose calls from Baltimore County in 2022. Let's
 
 ### Task 2: Load data
 
-**Task** Run the following code to load the data. In the space below, indicate how many rows and columns it has. **Answer**
+**Task** Run the following code to load the data. In the space below, indicate how many rows and columns it has. **Answer: 3822 rows, 4 columns**
 
 ```{r}
 baltco_911_calls <- read_csv("data/baltco_911_calls.csv")
