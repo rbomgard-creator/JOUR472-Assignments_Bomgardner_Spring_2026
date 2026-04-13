@@ -76,7 +76,7 @@ pg_calls_month |>
 
 Describe the pattern of results; you may want to look at the data to dig into particular outliers.
 
-**A2.**
+**A2: Week 28 reaches a peak with 41 calls. Other than that, the calls mainly stay between 20 and 30 a week, which seems fairly normal for a county so large. Week 53 also has a large drop off, which is because it's the end of the year.**
 
 ```{r}
 pg_calls_week <- pg_calls |>
@@ -85,7 +85,13 @@ pg_calls_week <- pg_calls |>
 
 pg_calls_week |>
   ggplot() + 
-  geom_line(aes(x=week, y=total_calls))
+  geom_line(aes(x=week, y=total_calls)) +
+  labs(
+    title="PG County overdose calls spiked in week 28 and had a major fall to end the year",
+    x = "Week",
+    y = "Total Calls",
+    caption = "Prince George's County EMS"
+  )
 ```
 
 **Q3.** A scatterplot is a type of chart that helps us see relationships between two variables. One variable goes on the x axis, the other on the y axis. For each row/observation in our data, a scatterplot puts a circle (or a "point") where the two variables intersect on a grid.
@@ -110,7 +116,33 @@ To answer this question, do the following:
 6.  Add a label for each point that shows the zip code using geom_text() - see some examples of its use at <https://ggplot2.tidyverse.org/reference/geom_text.html#ref-examples>. Try to make the names as easy to read as possible by avoiding overlap.
 7.  In the answer space below, describe what you see and answer the questions posed above. In a general sense, what do you think this means? Feel free to consider the actual raw values: how would you report out the main point(s) of this chart?
 
-**A3.**
+**A3: There isn't really a clear pattern that could truly determine if median income had an impact on the number of overdose calls within specific zipcodes in PG County. It means that there's not a strong correlation between the two variables, and we can't conclude anything from the scatterplot about how income could affect calling about an overdose. To report, I'd most likely use the original data, not the chart. You could talk about the highest calls, which come from 20743, which is Capitol Heights is located.**
 
 ```{r}
+pg_calls_zip <- pg_calls |>
+  group_by(zipcode) |>
+  summarize(total = n()) |>
+  mutate(zipcode = as.character(zipcode))
+
+variables_acs <- load_variables(2022, "acs5", cache = TRUE)
+
+median_income_zip <- get_acs(
+  geography = "zcta",
+  variables = c(medincome = "B06011_001"),
+  year = 2022) |>
+  mutate(GEOID = as.character(GEOID))
+
+joined_calls_zip <- pg_calls_zip |> right_join(median_income_zip, join_by(zipcode == GEOID))
+
+library(ggplot2)
+  ggplot(joined_calls_zip, aes(x=estimate, y=total)) +
+  geom_point() +
+  geom_text(aes(label = zipcode), check_overlap = TRUE, nudge_y = 2) +
+  xlim(0, 75000) +
+  labs(
+    title = "Median income in PG County doesn't matter when it comes to overdose calls",
+    x = "Estimated Median Income",
+    y = "Total Calls",
+    caption = "PG County EMS and ACS 2022"
+  )
 ```
