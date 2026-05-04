@@ -1,0 +1,77 @@
+---
+title: "lab_12"
+author: "Derek Willis"
+date: "2026-05-03"
+output: html_document
+name: "Riley Bomgardner"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   tidytext and our usual libraries
+
+## Load libraries and establish settings
+
+**Task** Create a codeblock and load appropriate packages and settings for this lab.
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(janitor)
+library(lubridate)
+library(rvest)
+```
+
+## Questions
+
+**Q1.** You've been assigned to report a story about the leading reasons that Maryland attorneys get sanctioned by the state for misconduct. The state [publishes lists of sanctions](https://www.courts.state.md.us/attygrievance/sanctions) that contain a short text description about the situation. Load the CSV file in the data folder containing records from fiscal year 2011 onwards. Make a list of unique words from the text column, then following the example in the pre_lab, remove common "stop words" from that list and create a list of the top 10 words containing the percentage of occurrences each word represents. What's the leading word in that answer and, broadly, what do you think the top 10 words describe?
+
+**A1. The leading word is failing at about 4.5%. The top ten words probably describe a deal gone bad or someone not upholding their end of a deal in a legal situation.**
+
+```{r}
+md_atty_sanctions <- read_csv("data/md_attorney_sanctions.csv")
+
+unique_words <- md_atty_sanctions |> select(text) |>
+  unnest_tokens(word, text)
+
+unique_words |>
+  anti_join(stop_words) |>
+  group_by(word) |>
+  tally(sort=TRUE) |>
+  mutate(percent = (n/sum(n))*100) |>
+  top_n(10)
+```
+
+**Q2.** Let's move beyond single words to phrases. Make a list of the top 10 three-word phrases, called trigrams, based on the example from the pre_lab (you'll need to modify the example code to do this). What's the top trigram and how often does it appear? What does that phrase mean in legal terms?
+
+**A2. The top trigram is "attorney trust account," which appears 2.4% of the time. This is a certain type of bank account where lawyers can hold client funds for future use. They're separate from a firm's operating account to make sure the money is only used to the client's benefit.**
+
+```{r}
+
+trigrams <- md_atty_sanctions |>
+  unnest_tokens(trigram, text, token = "ngrams", n=3) |>
+  separate(trigram, c("word1", "word2", "word3"), sep = " ") |>
+  filter(!word1 %in% stop_words$word) |>
+  filter(!word2 %in% stop_words$word) |>
+  mutate(trigram = paste(word1, word2, word3, sep=" ")) |>
+  group_by(trigram) |>
+  tally(sort=TRUE) |>
+  mutate(percent = (n/sum(n))*100) |>
+  top_n(10)
+```
+
+**Q3.** Let's drop back down to more traditional text analysis - take the top trigram from Q2 and write code to see how many times it occurs in the text column in each fiscal year. What do you think the answer produced by your code suggests? What else could you do to try and clarify the most important reasons attorneys get sanctioned?
+
+**A3. The largest number of times this trigram appears is in 2021, but there aren't any that occur in 2012, 2013, or 2014. This could mean that lawyers were just extra good at their jobs those years, or possibly another term could have been used instead. I don't think every appearance of this term should be seen in a bad light, it might just be part of the sanction that lists a certain article regarding money and "attorney trust account" just has a clause. You could use code and see if the ngram list can help to show how often this term comes up for one client multiple times, or think about fiscal year, etc. **
+
+```{r}
+atty_trust_account <- md_atty_sanctions |>
+  mutate(has_trigram = str_detect(text, "attorney trust account|Attorney trust account|Attorney Trust Account|ATTORNEY TRUST ACCOUNT")) |>
+  group_by(fiscal_year) |>
+  summarise(count = sum(has_trigram)) |>
+  arrange(desc(count))
+```
