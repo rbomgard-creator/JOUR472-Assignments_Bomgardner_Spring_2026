@@ -18,95 +18,59 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-In this notebook, we are analyzing data about board games.
+Data Link: <https://www.kaggle.com/datasets/andrewmvd/board-games?resource=download>
 
 ## Load libraries
 
-Loading required libraries for this analysis.
-
 ```{r echo=FALSE, message=FALSE}
 library(tidyverse)
+library(tidytext)
 library(janitor)
 library(lubridate)
-library(stringr)
 ```
 
-## Load and Cleaning Data
-
-In this section, describe the source of the data, write a basic data dictionary for data you are working with, and discuss any caveats or issues you discovered working with this data.
+## Loading Data
 
 ```{r}
-# Load required data
-
-# Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
-
-# Clean required data and prepare for analysis if needed. 
-
-board_games <- read.csv2("data/bgg_dataset.csv") |> clean_names()
+board_games_data <- read.csv2("data/bgg_dataset.csv") |> clean_names()
 ```
-
-## Questions to Answer
-
-In this notebook, we are answering questions about the board game data.
-
-### Sentence 1
-
--   **Sentence text**: [Paste in sentence to engineer here]
--   **Analysis summary**: [Write up two to three sentences describing the results of your analysis. Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
-
-# Display results of code below this codeblock
-
+board_games_data
 ```
 
-### Sentence 2
+## Basic Analysis
 
--   **Sentence text**: [Paste in sentence to engineer here]
--   **Analysis summary**: [Write up two to three sentences describing the results of your analysis. Were you able to confirm the finding? If not, why not?]
+There are 20,343 rows and 14 columns in the dataset.
+
+We do not have any price data included in this dataset so we will need joins to other datasets to address that. We also need information about attention deficits and ages that play the most. The column for game mechanics in our data, called mechanics, has inconsistent formatting for separate features, using slashes, commas or spaces to divide them all. They are in the same row which makes it more challenging.
+
+Our dataset does not have any timeframe limitations but some older games like marbles have rough approximates that use negative values. Those values are not specified to be time since the present or if it is in a BCE format. The last year with data is 2022, removing any conclusions from the previous three years. The play_time is not the actual length needed to play the game but instead it is biased data from the game's creators. The reviews for the games do not have sources, making it unclear if they are from one source or combined across multiple, which could have different rating criteria.
+
+We plan to research the needed data categories and try to add that for our future deliverables.
 
 ```{r}
-# Put code to reverse engineer sentence here
-
-# Display results of code below this codeblock
-
+nrow(board_games_data)
 ```
-
-### Sentence 3
-
--   **Sentence text**: [Paste in sentence to engineer here]
--   **Analysis summary**: [Write up two to three sentences describing the results of your analysis. Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
-
-# Display results of code below this codeblock
-
+only_monopoly <- board_games_data |> filter(str_detect(name, "Monopoly"))
+only_monopoly
 ```
-
-### Sentence 4
-
--   **Sentence text**: [Paste in sentence to engineer here]
--   **Analysis summary**: [Write up two to three sentences describing the results of your analysis. Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
-
-# Display results of code below this codeblock
-
+nrow(only_monopoly)
 ```
-
-### Sentence 5
-
--   **Sentence text**: [Paste in sentence to engineer here]
--   **Analysis summary**: [Write up two to three sentences describing the results of your analysis. Were you able to confirm the finding? If not, why not?]
 
 ```{r}
-# Put code to reverse engineer sentence here
-
-# Display results of code below this codeblock
-
+separate_wider_delim(only_monopoly, delim=",", cols = c(mechanic_1))
 ```
 
--30-
+```{r}
+isolated_mechanics <- str_split(only_monopoly$mechanics, ",")
+isolated_mechanics
+```
+
+```{r}
+isolated_mechanics
+```
