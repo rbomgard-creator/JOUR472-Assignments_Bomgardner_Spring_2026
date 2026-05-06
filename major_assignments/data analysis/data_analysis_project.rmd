@@ -53,24 +53,25 @@ We plan to research the needed data categories and try to add that for our futur
 nrow(board_games_data)
 ```
 
-```{r}
-only_monopoly <- board_games_data |> filter(str_detect(name, "Monopoly"))
-only_monopoly
-```
+Does board game popularity correlate with the number of exclusive game mechanics within it?
+
+Findings: There is a slight correlation, but it's negative (-0.37). This means that a board game with a top bgg_rank (1) will most likely have more mechanics listed than a board game listed in the ranking list at 20,000, and the decrease in mechanic count will decrease as the rank decreases. So, yes, board game ranking, or popularity, does correlate with game mechanics listed.
+
+The correlation test also confirms that this information is statistically significant due to a high t-value and an p-value that's nearly equivalent to 0.
+
+Does a higher amount of mechanics also mean that the complexity rate will be higher? Are the more popular board games ones that are more complex or harder to complete?
 
 ```{r}
-nrow(only_monopoly)
-```
 
-```{r}
-separate_wider_delim(only_monopoly, delim=",", cols = c(mechanic_1))
-```
+board_games_data_2 <- board_games_data |>
+  mutate(mechanic_count = ifelse(
+    is.na(mechanics) | mechanics == "",
+    0,
+    str_count(mechanics, ",") + 1
+  ))
 
-```{r}
-isolated_mechanics <- str_split(only_monopoly$mechanics, ",")
-isolated_mechanics
-```
+board_games_data_2 |>
+  select(name, mechanics, mechanic_count, bgg_rank)
 
-```{r}
-isolated_mechanics
+cor.test(board_games_data_2$bgg_rank, board_games_data_2$mechanic_count)
 ```
