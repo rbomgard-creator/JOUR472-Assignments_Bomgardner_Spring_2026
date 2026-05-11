@@ -46,10 +46,10 @@ md_counties <- counties() |>  filter(STATEFP == "24")
 ```{r}
 # Join the childcare data with the county data 
 md_childcare <- childcare_inspections |>
-  left_join(md_counties, by = c("fips" = "GEOID"))
+  left_join(md_counties, join_by(fips == GEOID))
 ```
 
-##### A1: The NAMELSAD column should be used because it lists Baltimore city and Baltimore County.The NAME column just has two entries for Baltimore.
+##### A1: The NAMELSAD column should be used because it lists Baltimore city and Baltimore County. The NAME column just has two entries for Baltimore.
 
 ------------------------------------------------------------------------
 
@@ -58,11 +58,22 @@ md_childcare <- childcare_inspections |>
 ```{r}
 # Calculate the percentage of overdue inspections per county
 
+md_childcare <- md_childcare |>
+  mutate(percent_overdue = overdue/total * 100)
+
 # Create the chart with ggplot
+md_childcare |>
+  ggplot() +
+  geom_bar(aes(x = NAMELSAD, weight = percent_overdue)) +
+  labs(
+    title = "Montgomery, Harford, and PG Counties top highest percent of overdue childcare facility inspections",
+    x = "County",
+    y = "Rate of Overdue Inspections"
+  )
 
 ```
 
-##### **A2:**
+##### **A2: Montgomery County has the highest rate of overdue childcare facility inspections.**
 
 ------------------------------------------------------------------------
 
@@ -71,31 +82,57 @@ md_childcare <- childcare_inspections |>
 ```{r}
 # First, grab data from the ACS. The ACS variable for children age under 5 is B06001_002 We want 2022 data.
 
+under_5 <- get_acs(
+  geography = "county",
+  variables = c(medincome = "B06001_002"),
+  year = 2022) |>
+  mutate(GEOID = as.character(GEOID))
+
 ```
 
 ```{r}
 # Rename the column name 'estimate', which has our population data, with something more useful, like 'children_pop'
+
+under_5 <- under_5 |>
+  rename(children_pop = estimate)
 
 ```
 
 ```{r}
 # Join the dataframes
 
+under_5_at_childcare <- md_childcare |>
+  left_join(under_5, join_by(fips == GEOID))
+
 # Calculate the rates for children per facility
+
+under_5_at_childcare <- under_5_at_childcare |>
+  mutate(child_per_fac = children_pop/total)
 
 ```
 
-##### **A3:**
+##### **A3: Garrett County has the highest rate at 87.5, which means they could definitely use more facilities, but most likely lack the resources and funding in the area.**
 
 ------------------------------------------------------------------------
 
 #### **Q4** Make a map of the results for question 3. Are there any areas of the state that are more lacking in childcare facilities?
 
 ```{r}
+library(sf)
 
+under_5_at_childcare_sf <- st_as_sf(under_5_at_childcare)
+
+under_5_at_childcare_sf |>
+  ggplot(aes(fill = child_per_fac)) +
+  geom_sf() +
+  scale_fill_viridis_c() +
+  labs(
+    title = "Children per childcare facility in Maryland counties",
+    fill = "Children per facility"
+  )
 ```
 
-##### **A4**:
+##### **A4: The pan handle, or the more northwest, mountainous counties have less childcare facilities and more children at each facility. The Eastern Shore is somewhat similar, but not as bad. Is this because they are more rural areas? **
 
 ------------------------------------------------------------------------
 
@@ -104,29 +141,53 @@ md_childcare <- childcare_inspections |>
 ```{r}
 # Again, grab data from the ACS. The ACS variable for median income is B19013_001. We want 2022 data again.
 
+median_income <- get_acs(
+  geography = "county",
+  variables = c(median_income = "B19013_001"),
+  year = 2022) |>
+  mutate(GEOID = as.character(GEOID))
 ```
 
 ```{r}
 # Rename the column name 'estimate', which has our income data, with something more useful, like 'median_income'
+
+median_income <- median_income |>
+  rename(median_income = estimate)
 
 ```
 
 ```{r}
 # Join the dataframes
 
+median_income_join <- under_5_at_childcare |>
+  left_join(median_income, join_by(fips == GEOID))
+
 ```
 
 ```{r}
 # Create a scatterplot with median income and rate of children per facility
+
+median_income_join |>
+  ggplot(aes(x = median_income, y = child_per_fac)) +
+  geom_point() +
+  labs(
+    title = "Not a great correlation between median income and children per facility",
+    x = "Median Income",
+    y = "Children per facility"
+  )
 
 ```
 
 ```{r}
 # Create a correlation test.
 
+cor.test(
+  median_income_join$median_income,
+  median_income_join$child_per_fac
+)
 ```
 
-##### A5:
+##### A5: There is a very, very weak negative correlation between the two variables. For one, the cor test shows that the p-value is over 0.05, which means this correlation is not statistically significant and therefore you cannot say that median income influences the amount of childcare facilities in a county or the number of children that attend each one.
 
 ------------------------------------------------------------------------
 
@@ -134,17 +195,36 @@ md_childcare <- childcare_inspections |>
 
 ```{r}
 # Read the reports data
+
+library(rvest)
+library(tidytext)
+
 reports <- read_csv('data/childcare-informal-provider-inspections.csv') |> clean_names()
 ```
 
 ```{r}
 # Create a stopword dictionary (feel free to include more words)
 
+data("stop_words")
+
+stop_words <- stop_words |>
+  add_row(word = "childcare") |>
+  add_row(word = "child") |>
+  add_row(word = "care")
+
 ```
 
 ```{r}
 # Unnest tokens into bigrams, removing stop words and repasting bigrams, list bigrams
 
+reports |>
+  unnest_tokens(bigram, initial_findings, token = "ngrams", n = 2) |>
+  separate(bigram, c("word1", "word2"), sep = " ") |>
+  filter(!word1 %in% stop_words$word,
+         !word2 %in% stop_words$word) |>
+  unite(bigram, word1, word2, sep = " ") |>
+  count(bigram, sort = TRUE)
+
 ```
 
-##### A6:
+##### A6: The most common bigrams are "emergency bag," "ertg missing," and "cleaning products." One that stuck out to me was "knife draw." I know what its referring to, which is easily accessible knives or other sharp kitchen items that could potentially be accessible to children at a care facility. But the phrase by itself is kind of silly. It reminds me of, "Who brings a knife to a gun fight?"
