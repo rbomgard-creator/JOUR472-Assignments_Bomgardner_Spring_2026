@@ -75,3 +75,36 @@ board_games_data_2 |>
 
 cor.test(board_games_data_2$bgg_rank, board_games_data_2$mechanic_count)
 ```
+
+
+
+What board games are the most optimized for kids with attention disorders? In other words, what ADHD-friendly board games, or ones with a shorter playing time, take into account shorter attention spans of kids with ADHD? The max amount of playing time would be around 30 minutes. This would also be filtered with a minimum age to play. Strategy game mechanics are also considered.
+
+Findings: The top game that would be considered AHDH-friendly under these guidelines is TerroriXico. It's a Mexican board game where players work together to capture monsters by using different cards throughout the game. The player with the most victory points wins. This seems like a game that will definitely keep a person's attention on what's happening in front of them, and it doesn't sound boring at all. Other top board games include Flip and Fish, Dodos and Dinos, and Animator vs. Animation. 
+
+```{r}
+library(dplyr)
+library(stringr)
+library(readr)
+
+# 1. Convert only what we need
+board_games_data_2 <- board_games_data_2 |>
+  mutate(
+    play_time = as.numeric(`play_time`),
+    min_age = as.numeric(`min_age`),
+    rating_average = as.numeric(str_replace_all(`rating_average`, ",", "."))
+  )
+
+# 3. Filter: play time and min age only
+results <- board_games_data_2 |>
+  filter(
+    play_time > 0,
+    play_time <= 30,
+    min_age   > 0,
+    min_age   <= 10
+  ) |>
+  arrange(desc(rating_average)) |>
+  select(name, min_age, play_time, rating_average, domains, mechanics)
+
+print(results)
+```
