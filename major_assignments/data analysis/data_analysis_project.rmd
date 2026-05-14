@@ -27,6 +27,8 @@ library(tidyverse)
 library(tidytext)
 library(janitor)
 library(lubridate)
+library(ggplot2)
+library(haven)
 ```
 
 ## Loading Data
@@ -53,7 +55,37 @@ We plan to research the needed data categories and try to add that for our futur
 nrow(board_games_data)
 ```
 
-Does board game popularity correlate with the number of exclusive game mechanics within it?
+
+Question: How many versions of Monopoly are there and what affects the different pricing for each?
+
+```{r}
+only_monopoly <- board_games_data |> filter(str_detect(name, "Monopoly"))
+only_monopoly
+```
+
+```{r}
+nrow(only_monopoly)
+```
+
+```{r}
+isolated_mechanics <- only_monopoly |> separate_longer_delim(cols = "mechanics", delim=",")
+```
+
+```{r}
+counted_mechanics <- isolated_mechanics |> group_by(mechanics) |> summarise(count=n()) |> filter(count==1)
+```
+
+```{r}
+left_join(isolated_mechanics, counted_mechanics) |> filter(count==1)
+```
+
+```{r}
+amazon_prices <- read_csv("data/boardgame-geek-dataset_organized.csv")
+amazon_prices
+```
+
+
+Question: Does board game popularity correlate with the number of exclusive game mechanics within it?
 
 Findings: There is a slight correlation, but it's negative (-0.37). This means that a board game with a top bgg_rank (1) will most likely have more mechanics listed than a board game listed in the ranking list at 20,000, and the decrease in mechanic count will decrease as the rank decreases. So, yes, board game ranking, or popularity, does correlate with game mechanics listed.
 
@@ -78,9 +110,53 @@ cor.test(board_games_data_2$bgg_rank, board_games_data_2$mechanic_count)
 
 
 
-What board games are the most optimized for kids with attention disorders? In other words, what ADHD-friendly board games, or ones with a shorter playing time, take into account shorter attention spans of kids with ADHD? The max amount of playing time would be around 30 minutes. This would also be filtered with a minimum age to play. Strategy game mechanics are also considered.
+QUESTION: Which socioeconomic classes/education levels are more likely to have board games in their home? data set I found with details on this: <https://osf.io/nfr7d/files/tu8yq>
 
-Findings: The top game that would be considered AHDH-friendly under these guidelines is TerroriXico. It's a Mexican board game where players work together to capture monsters by using different cards throughout the game. The player with the most victory points wins. This seems like a game that will definitely keep a person's attention on what's happening in front of them, and it doesn't sound boring at all. Other top board games include Flip and Fish, Dodos and Dinos, and Animator vs. Animation. 
+ANSWER: Individuals with higher educational attainment (university and postgraduate levels) are more likely to report engagement with board games and related hobby gaming behaviors. Lower educational groups (high school or some high school) show comparatively lower engagement levels.
+
+```{r}
+
+your_move_data <- read_sav("data/Your move data.sav") |> clean_names()
+names(your_move_data)
+your_move_data$education <- as_factor(your_move_data$education)
+your_move_data$q3_1 <- as_factor(your_move_data$q3_1)
+your_move_data$q4_8_6 <- as.numeric(your_move_data$q4_8_6)
+```
+
+```{r}
+# 1. Education distribution
+
+table(your_move_data$education)
+
+ggplot(your_move_data, aes(x = education)) +
+  geom_bar() + coord_flip() +
+  labs(
+    title = "Education Levels of Board Gamers",
+    x = "Education Level",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# 2. Education vs Player Type
+
+ggplot(your_move_data,
+       aes(x = education, fill = q3_1)) +
+  geom_bar(position = "fill") + coord_flip() +
+  labs(
+    title = "Player Type by Education Level",
+    x = "Education Level",
+    y = "Proportion",
+    fill = "Player Type"
+  ) +
+  theme_minimal()
+```
+
+
+Question: What board games are the most optimized for kids with attention disorders? In other words, what ADHD-friendly board games, or ones with a shorter playing time, take into account shorter attention spans of kids with ADHD? The max amount of playing time would be around 30 minutes. This would also be filtered with a minimum age to play. Strategy game mechanics are also considered.
+
+Findings: The top game that would be considered ADHD-friendly under these guidelines is TerroriXico. It's a Mexican board game where players work together to capture monsters by using different cards throughout the game. The player with the most victory points wins. This seems like a game that will definitely keep a person's attention on what's happening in front of them, and it doesn't sound boring at all. Other top board games include Flip and Fish, Dodos and Dinos, and Animator vs. Animation. 
 
 ```{r}
 library(dplyr)
@@ -107,4 +183,44 @@ results <- board_games_data_2 |>
   select(name, min_age, play_time, rating_average, domains, mechanics)
 
 print(results)
+```
+
+
+Are the minimum ages differentiated enough based on children's attention spans and playing time?
+
+Findings: I would say yes. Even if a minimum age on a board game says 1+, anyone can play it. But more games fitting the criteria of a play time less than or equal to 30 minutes and a minimum age less than or equal to 10 seem to increase in playing time as the age increases. The graph also shows how many games fit these constraints in the data. Even years tend to have more board games listed than odd years, which makes sense because most manufacturers have a standard minimum age for their games, and it's usually even. Almost a third of the kids board game data falls under 8 as a minimum age. 
+
+```{r}
+# 1. Filter to your dataset (kids, short games)
+kids_board_games_data <- board_games_data |>
+  filter(
+    play_time > 0,
+    play_time <= 30,
+    min_age   > 0,
+    min_age   <= 10
+  )
+
+# 2. Average play time per minimum age group
+age_summary <- kids_board_games_data |>
+  group_by(min_age) |>
+  summarise(
+    avg_play_time  = mean(play_time, na.rm = TRUE),
+    median_play_time = median(play_time, na.rm = TRUE),
+    n_games = n()
+  ) |>
+  arrange(min_age)
+
+print(age_summary)
+
+# 3. Visualize
+ggplot(age_summary, aes(x = factor(min_age), y = avg_play_time)) +
+  geom_col(fill = "#1D9E75") +
+  geom_text(aes(label = paste0("n=", n_games)), vjust = -0.5, size = 3) +
+  labs(
+    title    = "Average Play Time by Minimum Age",
+    subtitle = "Games ≤ 30 min, ages ≤ 10",
+    x        = "Minimum Age",
+    y        = "Average Play Time (minutes)"
+  ) +
+  theme_minimal()
 ```
